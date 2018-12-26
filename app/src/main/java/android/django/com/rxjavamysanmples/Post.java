@@ -7,8 +7,18 @@ public class Post {
     private String title;
     private String body;
 
+    private DownloadingStatus status;
+
 
     public Post() {
+    }
+
+    public Post(int userId, String id, String title, String body, DownloadingStatus status) {
+        this.userId = userId;
+        this.id = id;
+        this.title = title;
+        this.body = body;
+        this.status = status;
     }
 
     public int getUserId() {
@@ -41,5 +51,13 @@ public class Post {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public DownloadingStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(DownloadingStatus status) {
+        this.status = status;
     }
 }

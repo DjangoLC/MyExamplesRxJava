@@ -2,9 +2,13 @@ package android.django.com.rxjavamysanmples;
 
 import android.annotation.SuppressLint;
 import android.os.Build;
+import android.os.SystemClock;
+import android.support.annotation.MainThread;
 import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -17,13 +21,15 @@ import io.reactivex.ObservableSource;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
 
 public class MainActivity extends AppCompatActivity {
 
 
     private final String TAG = "MainActivity";
-    
+    private AdapterPosts adapterPosts;
+    RecyclerView mRecyclerView;
+    private Post current;
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     @SuppressLint("CheckResult")
     @Override
@@ -31,35 +37,58 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TextView tv_text = findViewById(R.id.tv_text);
+        mRecyclerView = findViewById(R.id.mRecyclerView);
         RetrofitAdapter retrofitAdapter = new RetrofitAdapter();
 
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapterPosts = new AdapterPosts(populateUrls());
+        mRecyclerView.setAdapter(adapterPosts);
+
         Observable.fromIterable(populateUrls())
-                .flatMap((Function<Integer, Observable<Post>>) s -> {
-                    Log.e(TAG, "apply: id? "+s );
-                    return retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts(s);
+                .flatMap((Function<Post, Observable<Post>>) s -> {
+                    current = s;
+                    return retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts(s.getUserId());
+                })
+                .doOnNext(next->{
+                    this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            current.setStatus(DownloadingStatus.DOWNLOADING);
+                            adapterPosts.setPostList(current);
+                        }
+                    });
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(post->{
-                            tv_text.append(post.getTitle()+"\n");
-                            tv_text.append("------------------------------- \n");
+                    if (post!=null){
+                        current.setStatus(DownloadingStatus.DOWNLOADED);
+                        adapterPosts.setPostList(current);
+                    }else{
+                        current.setStatus(DownloadingStatus.ERROR);
+                        adapterPosts.setPostList(current);
+                    }
                 },error->{
-                    Log.e(TAG, "error: "+error.getMessage());
+                    this.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.e(TAG, "error : "+error.getMessage() );
+                            current.setStatus(DownloadingStatus.ERROR);
+                            adapterPosts.setPostList(current);
+                        }
+                    });
                 });
 
 
     }
 
-    private List<Integer> populateUrls(){
-        List<Integer> mUrls = new ArrayList<>();
-        mUrls.add(1);
-        mUrls.add(2);
-        mUrls.add(3);
-        mUrls.add(4);
-        mUrls.add(5);
-        mUrls.add(6);
-        mUrls.add(7);
+    private List<Post> populateUrls(){
+        List<Post> mUrls = new ArrayList<>();
+        mUrls.add(new Post(1,"uno","title 1","",DownloadingStatus.NOT_DOWNLOADED));
+        mUrls.add(new Post(2,"dos","title 2","",DownloadingStatus.NOT_DOWNLOADED));
+        mUrls.add(new Post(3,"tres","title 3","",DownloadingStatus.NOT_DOWNLOADED));
+        mUrls.add(new Post(4,"cuatro","title 4","",DownloadingStatus.NOT_DOWNLOADED));
+        mUrls.add(new Post(1000000,"over 1000+","title 5","",DownloadingStatus.NOT_DOWNLOADED));
         return mUrls;
     }
 
