@@ -23,8 +23,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private final String TAG = "MainActivity";
-
-    private int cont = 0;
+    
     @RequiresApi(api = Build.VERSION_CODES.N)
     @SuppressLint("CheckResult")
     @Override
@@ -33,69 +32,34 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         TextView tv_text = findViewById(R.id.tv_text);
-        List<String> mUrls = new ArrayList<>();
-
-
         RetrofitAdapter retrofitAdapter = new RetrofitAdapter();
 
-
-//        retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts().subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(obj->{
-//                    if (obj!=null){
-//                        tv_text.setText("");
-//                        for (Post post : obj){
-//                            Log.e(TAG, "onCreate: "+post.getBody());
-//                            tv_text.append(post.getTitle() + "\n");
-//                        }
-//                    }
-//                }, error->{
-//                    Log.e(TAG, "onCreate: "+error.getMessage());
-//                });
-
-
-//        retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts().subscribeOn(Schedulers.io())
-//                .obs
-
-//        Observable.fromArray(populateUrls())
-//                .flatMap(new Function<List<String>, Observable<List<Post>>>() {
-//                    @Override
-//                    public Observable<List<Post>> apply(List<String> strings) throws Exception {
-//                        cont++;
-//                        Log.e(TAG, "apply: "+cont+" time" );
-//                        return retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts();
-//                    }
-//                })
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(AndroidSchedulers.mainThread())
-//                .subscribe(response->{
-//                    for (Post post : response){
-//                        tv_text.append(post.getTitle());
-//                    }
-//                });
-
-
         Observable.fromIterable(populateUrls())
-                .flatMap((Function<String, Observable<List<Post>>>) s -> {
-                    Log.e(TAG, "apply: "+s );
-                    return retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts();
+                .flatMap((Function<Integer, Observable<Post>>) s -> {
+                    Log.e(TAG, "apply: id? "+s );
+                    return retrofitAdapter.RetrofitAdapter().create(RestService.class).getPosts(s);
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(response->{
-
+                .subscribe(post->{
+                            tv_text.append(post.getTitle()+"\n");
+                            tv_text.append("------------------------------- \n");
                 },error->{
-
+                    Log.e(TAG, "error: "+error.getMessage());
                 });
 
 
     }
 
-    private List<String> populateUrls(){
-        List<String> mUrls = new ArrayList<>();
-        mUrls.add("https://jsonplaceholder.typicode.com/posts");
-        mUrls.add("https://jsonplaceholder.typicode.com/posts");
-        mUrls.add("https://jsonplaceholder.typicode.com/posts");
+    private List<Integer> populateUrls(){
+        List<Integer> mUrls = new ArrayList<>();
+        mUrls.add(1);
+        mUrls.add(2);
+        mUrls.add(3);
+        mUrls.add(4);
+        mUrls.add(5);
+        mUrls.add(6);
+        mUrls.add(7);
         return mUrls;
     }
 
